@@ -48,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     });
 
-    const data = await upstream.json();
+    const data = await upstream.json() as { error?: { message?: string }; [key: string]: unknown };
 
     if (!upstream.ok) {
       return res.status(upstream.status).json({
