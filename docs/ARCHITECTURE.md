@@ -51,14 +51,14 @@ History Save → Export Options
 
 | Module | Purpose | LOC |
 |--------|---------|-----|
-| `data.js` | Static configuration — lenses, models, stages, enrichments | ~60 |
-| `app.js` | State management, init, keyboard, navigation, settings | ~200 |
-| `engine.js` | API calls, streaming, prompt building, result parsing | ~500 |
-| `ui.js` | DOM rendering, screen management, opportunity cards | ~400 |
-| `radar.js` | Pure SVG radar chart generation | ~50 |
-| `export.js` | JSON and Markdown export functions | ~80 |
-| `history.js` | LocalStorage history CRUD | ~80 |
-| `utils.js` | Shared helpers — escape, clamp, toast | ~30 |
+| `js/data.js` | Static configuration — lenses, models, stages, enrichments | ~60 |
+| `js/app.js` | State management, init, keyboard, navigation, settings | ~200 |
+| `js/engine.js` | API calls, streaming, prompt building, result parsing | ~500 |
+| `js/ui.js` | DOM rendering, screen management, opportunity cards | ~400 |
+| `js/radar.js` | Pure SVG radar chart generation | ~50 |
+| `js/export.js` | JSON and Markdown export functions | ~80 |
+| `js/history.js` | LocalStorage history CRUD | ~80 |
+| `js/utils.js` | Shared helpers — escape, clamp, toast | ~30 |
 
 ## Key Design Decisions
 
