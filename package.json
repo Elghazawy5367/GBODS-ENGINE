@@ -5,7 +5,8 @@
   "main": "src/index.html",
   "scripts": {
     "dev": "npx serve src -p 3000",
-    "start": "npx serve src"
+    "start": "npx serve src",
+    "build": "echo 'No build step required for GBODS V5 PRO'"
   },
   "keywords": [
     "blue-ocean",
