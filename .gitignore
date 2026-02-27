@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node (for local dev server only)
+node_modules/
+package-lock.json
+
+# Build artifacts
+dist/
+*.log
+
+# Environment
+.env
+.env.local
