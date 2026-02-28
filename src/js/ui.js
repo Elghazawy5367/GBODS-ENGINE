@@ -267,3 +267,76 @@ function getScoreColor(score) {
   if (score >= 60) return 'var(--cyan)';
   return 'var(--red)';
 }
+
+// ─── MICRO-NICHE SUGGESTION CHIPS ───────────────────
+
+function showSuggestionLoading(vectorId) {
+  var container = $('sug-' + vectorId);
+  if (!container) return;
+  container.innerHTML =
+    '<div class="sug-loading">' +
+    '<span class="sug-spinner"></span>' +
+    '<span class="sug-loading-text">Finding micro-niches\u2026</span>' +
+    '</div>';
+  container.style.display = 'flex';
+}
+
+function renderSuggestionChips(vectorId, suggestions) {
+  var container = $('sug-' + vectorId);
+  if (!container) return;
+
+  container.innerHTML =
+    '<div class="sug-row">' +
+    '<span class="sug-label">Narrow to \u2192</span>' +
+    suggestions.map(function(s) {
+      return '<button class="sug-chip" onmousedown="applySuggestion(event,\'' + vectorId + '\',\'' + s.replace(/'/g, "\\'") + '\')" title="' + esc(s) + '">' + esc(s) + '</button>';
+    }).join('') +
+    '<button class="sug-refresh" onmousedown="refreshSuggestions(event,\'' + vectorId + '\')" title="Refresh suggestions">\u21BB</button>' +
+    '</div>';
+  container.style.display = 'flex';
+}
+
+function hideSuggestions(vectorId) {
+  var container = $('sug-' + vectorId);
+  if (container) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+  }
+}
+
+function applySuggestion(e, vectorId, suggestion) {
+  e.preventDefault();
+  var input = $(vectorId);
+  if (!input) return;
+  input.value = suggestion;
+  input.dispatchEvent(new Event('input'));
+  updateMath();
+  hideSuggestions(vectorId);
+
+  if (S.step === 3 && val('v1') && val('v2')) {
+    softAlignLenses();
+  }
+
+  showToast('Applied: "' + suggestion + '"', 'success');
+}
+
+function refreshSuggestions(e, vectorId) {
+  e.preventDefault();
+  S.microSuggestions[vectorId] = [];
+  fetchVectorSuggestions(vectorId);
+}
+
+// ─── LENS SOFT HIGHLIGHT ────────────────────────────
+
+function highlightAlignedLenses(lensIds) {
+  document.querySelectorAll('.lens-chip.soft-aligned').forEach(function(el) {
+    el.classList.remove('soft-aligned');
+  });
+
+  lensIds.forEach(function(id) {
+    var chip = $('lc-' + id);
+    if (chip && !chip.classList.contains('selected')) {
+      chip.classList.add('soft-aligned');
+    }
+  });
+}

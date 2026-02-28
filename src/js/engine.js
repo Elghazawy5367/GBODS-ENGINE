@@ -26,6 +26,80 @@ async function callAPI(messages, maxTokens, stream, signal) {
   });
 }
 
+// ─── VECTOR MICRO-NICHE SUGGESTIONS ─────────────────
+
+async function fetchVectorSuggestions(vectorId) {
+  if (!getApiKey() || S.suggestionLoading[vectorId]) return;
+
+  const currentVal = val(vectorId);
+  if (!currentVal || currentVal.length < 4) return;
+
+  S.suggestionLoading[vectorId] = true;
+  showSuggestionLoading(vectorId);
+
+  const v1Val = val('v1');
+  const v2Val = val('v2');
+  const v3Val = val('v3');
+
+  let contextBlock = '';
+  if (vectorId === 'v1') {
+    contextBlock = 'You are helping define the BASE niche for a blue ocean opportunity system.\nCurrent V1 input: "' + currentVal + '"';
+  } else if (vectorId === 'v2') {
+    contextBlock = 'V1 (base niche) is already set to: "' + v1Val + '"\nYou are narrowing the INTERSECTION niche (V2).\nCurrent V2 input: "' + currentVal + '"';
+  } else {
+    contextBlock = 'V1 = "' + v1Val + '", V2 = "' + v2Val + '"\nYou are deepening with a sub-community (V3).\nCurrent V3 input: "' + currentVal + '"';
+  }
+
+  const prompt = contextBlock + '\n\nGenerate exactly 5 micro/sub-niche refinements for this vector. Each must be:\n- More specific than the user\'s input (add a qualifier, platform, behavior, or pain context)\n- 3-6 words maximum\n- Commercially interesting — implies a real unserved pain\n- Distinct from each other (no near-duplicates)\n\nReturn ONLY a raw JSON array, no markdown, no preamble:\n["suggestion one","suggestion two","suggestion three","suggestion four","suggestion five"]';
+
+  try {
+    const res = await callAPI(
+      [{ role: 'user', content: prompt }],
+      200,
+      false,
+      null
+    );
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    const match = text.match(/\[[\s\S]*?\]/);
+    if (match) {
+      const suggestions = JSON.parse(match[0]).slice(0, 5);
+      S.microSuggestions[vectorId] = suggestions;
+      renderSuggestionChips(vectorId, suggestions);
+
+      if (val('v1') && val('v2')) {
+        softAlignLenses();
+      }
+    } else {
+      hideSuggestions(vectorId);
+    }
+  } catch (e) {
+    hideSuggestions(vectorId);
+  } finally {
+    S.suggestionLoading[vectorId] = false;
+  }
+}
+
+async function softAlignLenses() {
+  if (S.selectedLenses.length >= 2) return;
+
+  const v1Val = val('v1'), v2Val = val('v2'), v3Val = val('v3');
+  const lensIds = LENSES.map(l => l.id).join(', ');
+
+  const prompt = 'Given this emerging niche intersection:\nV1: "' + v1Val + '"\nV2: "' + v2Val + '"' + (v3Val ? '\nV3: "' + v3Val + '"' : '') + '\n\nFrom this lens list: ' + lensIds + '\n\nReturn ONLY a raw JSON array of the 2 lens IDs that would most amplify commercial opportunity at this intersection. No markdown:\n["lens_id_1","lens_id_2"]';
+
+  try {
+    const res = await callAPI([{ role: 'user', content: prompt }], 80, false, null);
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    const match = text.match(/\[[\s\S]*?\]/);
+    if (match) {
+      const aligned = JSON.parse(match[0]);
+      highlightAlignedLenses(aligned);
+    }
+  } catch (e) { /* silent fail */ }
+}
+
 // ─── LENS + PAIN SCOUT (combined) ───────────────────
 
 async function runLensScout() {
