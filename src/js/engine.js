@@ -65,7 +65,7 @@ function getLocalSuggestions(input, vectorId) {
   if (matched.length === 0) {
     var words = q.split(/\s+/);
     for (var w = 0; w < words.length; w++) {
-      if (words[w].length < 3) continue;
+      if (words[w].length < 3) continue; // skip short words (to, at, is) to avoid false matches
       for (var k = 0; k < keys.length; k++) {
         var seeds = NICHE_SEEDS[keys[k]];
         for (var s = 0; s < seeds.length; s++) {
@@ -74,6 +74,7 @@ function getLocalSuggestions(input, vectorId) {
           }
         }
       }
+      if (matched.length >= 10) break;
     }
   }
 
