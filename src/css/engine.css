@@ -671,6 +671,109 @@ select {
 .toast.success { border-color: rgba(74,222,128,0.4); color: var(--green); }
 .toast.error { border-color: rgba(248,113,113,0.4); color: var(--red); }
 
+/* ═══════════════════════════════ MICRO-NICHE SUGGESTIONS */
+
+.sug-container {
+  display: none;
+  flex-direction: column;
+  margin-top: 6px;
+  animation: fadeIn 0.2s ease;
+}
+
+.sug-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sug-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--txt3);
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+}
+
+.sug-chip {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+  background: var(--bg3);
+  border: 1px solid var(--line2);
+  border-radius: 20px;
+  color: var(--txt2);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: 'Outfit', sans-serif;
+}
+
+.sug-chip:hover {
+  background: var(--gold-d);
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: translateY(-1px);
+}
+
+.sug-refresh {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--txt3);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.sug-refresh:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.sug-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.sug-spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--line2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.sug-loading-text {
+  font-size: 10px;
+  color: var(--txt3);
+  font-family: 'JetBrains Mono', monospace;
+  font-style: italic;
+}
+
+.lens-chip.soft-aligned {
+  border-color: rgba(232, 184, 75, 0.35);
+  background: rgba(232, 184, 75, 0.04);
+}
+
+.lens-chip.soft-aligned::before {
+  content: '\25CE';
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 8px;
+  color: var(--gold);
+  opacity: 0.7;
+}
+
 /* ═══════════════════════════════ RESPONSIVE */
 @media (max-width: 700px) {
   .analysis-wrap { flex-direction: column; }

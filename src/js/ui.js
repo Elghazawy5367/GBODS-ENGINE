@@ -267,3 +267,87 @@ function getScoreColor(score) {
   if (score >= 60) return 'var(--cyan)';
   return 'var(--red)';
 }
+
+// ─── MICRO-NICHE SUGGESTION CHIPS ───────────────────
+
+function showSuggestionLoading(vectorId) {
+  var container = $('sug-' + vectorId);
+  if (!container) return;
+  container.innerHTML =
+    '<div class="sug-loading">' +
+    '<span class="sug-spinner"></span>' +
+    '<span class="sug-loading-text">Finding micro-niches\u2026</span>' +
+    '</div>';
+  container.style.display = 'flex';
+}
+
+function renderSuggestionChips(vectorId, suggestions) {
+  var container = $('sug-' + vectorId);
+  if (!container) return;
+
+  container.innerHTML =
+    '<div class="sug-row">' +
+    '<span class="sug-label">Narrow to \u2192</span>' +
+    suggestions.map(function(s, i) {
+      return '<button class="sug-chip" data-vid="' + vectorId + '" data-idx="' + i + '" title="' + esc(s) + '">' + esc(s) + '</button>';
+    }).join('') +
+    '<button class="sug-refresh" data-vid="' + vectorId + '" title="Refresh suggestions">\u21BB</button>' +
+    '</div>';
+
+  container.querySelectorAll('.sug-chip').forEach(function(btn) {
+    btn.addEventListener('mousedown', function(e) {
+      var idx = parseInt(btn.getAttribute('data-idx'));
+      applySuggestion(e, vectorId, suggestions[idx]);
+    });
+  });
+  container.querySelector('.sug-refresh').addEventListener('mousedown', function(e) {
+    refreshSuggestions(e, vectorId);
+  });
+
+  container.style.display = 'flex';
+}
+
+function hideSuggestions(vectorId) {
+  var container = $('sug-' + vectorId);
+  if (container) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+  }
+}
+
+function applySuggestion(e, vectorId, suggestion) {
+  e.preventDefault();
+  var input = $(vectorId);
+  if (!input) return;
+  input.value = suggestion;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  updateMath();
+  hideSuggestions(vectorId);
+
+  if (S.step === 3 && val('v1') && val('v2')) {
+    softAlignLenses();
+  }
+
+  showToast('Applied: "' + suggestion + '"', 'success');
+}
+
+function refreshSuggestions(e, vectorId) {
+  e.preventDefault();
+  S.microSuggestions[vectorId] = [];
+  fetchVectorSuggestions(vectorId);
+}
+
+// ─── LENS SOFT HIGHLIGHT ────────────────────────────
+
+function highlightAlignedLenses(lensIds) {
+  document.querySelectorAll('.lens-chip.soft-aligned').forEach(function(el) {
+    el.classList.remove('soft-aligned');
+  });
+
+  lensIds.forEach(function(id) {
+    var chip = $('lc-' + id);
+    if (chip && !chip.classList.contains('selected')) {
+      chip.classList.add('soft-aligned');
+    }
+  });
+}

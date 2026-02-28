@@ -17,6 +17,9 @@ const S = {
   streaming: false,
   abortController: null,
   rawText: '',
+  microSuggestions: { v1: [], v2: [], v3: [] },
+  suggestionLoading: { v1: false, v2: false, v3: false },
+  debounceTimers: { v1: null, v2: null, v3: null },
 };
 
 // ─── INIT ───────────────────────────────────────────
@@ -31,6 +34,7 @@ function init() {
   setupKeyboard();
   setupConstraintListeners();
   checkConstraints();
+  setupVectorSuggestions();
 }
 
 // ─── KEYBOARD ───────────────────────────────────────
@@ -76,6 +80,32 @@ function checkConstraints() {
   if (el) {
     el.innerHTML = warns.map(w => `<div class="constraint-warn">⚠ ${w}</div>`).join('');
   }
+}
+
+// ─── VECTOR SUGGESTIONS ─────────────────────────────
+
+function setupVectorSuggestions() {
+  ['v1', 'v2', 'v3'].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+
+    el.addEventListener('input', () => {
+      clearTimeout(S.debounceTimers[id]);
+      const v = el.value.trim();
+      if (v.length < 4) {
+        hideSuggestions(id);
+        return;
+      }
+      S.debounceTimers[id] = setTimeout(() => {
+        fetchVectorSuggestions(id);
+      }, 600);
+    });
+
+    el.addEventListener('blur', () => {
+      // Delay hide so chip mousedown events register before container is hidden
+      setTimeout(() => hideSuggestions(id), 200);
+    });
+  });
 }
 
 // ─── NAVIGATION ─────────────────────────────────────
@@ -180,7 +210,7 @@ function newAnalysis() {
   S.selectedPain = null;
   S.rawText = '';
   $('historyFab').style.display = 'none';
-  document.querySelectorAll('.lens-chip').forEach(el => el.classList.remove('selected', 'ai-suggested'));
+  document.querySelectorAll('.lens-chip').forEach(el => el.classList.remove('selected', 'ai-suggested', 'soft-aligned'));
   document.querySelectorAll('.lens-cb').forEach(el => el.checked = false);
   document.querySelectorAll('.lens-reason').forEach(el => el.style.display = 'none');
   document.querySelectorAll('.enrich-chip').forEach(el => el.classList.remove('on'));
@@ -192,6 +222,10 @@ function newAnalysis() {
   $('topRecCard').style.display = 'none';
   $('systemInsightCard').style.display = 'none';
   $('h72Card').style.display = 'none';
+  S.microSuggestions = { v1: [], v2: [], v3: [] };
+  hideSuggestions('v1');
+  hideSuggestions('v2');
+  hideSuggestions('v3');
 }
 
 // ─── BOOT ───────────────────────────────────────────
