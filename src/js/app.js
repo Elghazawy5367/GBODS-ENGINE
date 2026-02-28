@@ -102,6 +102,7 @@ function setupVectorSuggestions() {
     });
 
     el.addEventListener('blur', () => {
+      // Delay hide so chip mousedown events register before container is hidden
       setTimeout(() => hideSuggestions(id), 200);
     });
   });

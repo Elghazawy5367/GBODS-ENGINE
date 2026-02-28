@@ -288,11 +288,22 @@ function renderSuggestionChips(vectorId, suggestions) {
   container.innerHTML =
     '<div class="sug-row">' +
     '<span class="sug-label">Narrow to \u2192</span>' +
-    suggestions.map(function(s) {
-      return '<button class="sug-chip" onmousedown="applySuggestion(event,\'' + vectorId + '\',\'' + s.replace(/'/g, "\\'") + '\')" title="' + esc(s) + '">' + esc(s) + '</button>';
+    suggestions.map(function(s, i) {
+      return '<button class="sug-chip" data-vid="' + vectorId + '" data-idx="' + i + '" title="' + esc(s) + '">' + esc(s) + '</button>';
     }).join('') +
-    '<button class="sug-refresh" onmousedown="refreshSuggestions(event,\'' + vectorId + '\')" title="Refresh suggestions">\u21BB</button>' +
+    '<button class="sug-refresh" data-vid="' + vectorId + '" title="Refresh suggestions">\u21BB</button>' +
     '</div>';
+
+  container.querySelectorAll('.sug-chip').forEach(function(btn) {
+    btn.addEventListener('mousedown', function(e) {
+      var idx = parseInt(btn.getAttribute('data-idx'));
+      applySuggestion(e, vectorId, suggestions[idx]);
+    });
+  });
+  container.querySelector('.sug-refresh').addEventListener('mousedown', function(e) {
+    refreshSuggestions(e, vectorId);
+  });
+
   container.style.display = 'flex';
 }
 
@@ -309,7 +320,7 @@ function applySuggestion(e, vectorId, suggestion) {
   var input = $(vectorId);
   if (!input) return;
   input.value = suggestion;
-  input.dispatchEvent(new Event('input'));
+  input.dispatchEvent(new Event('input', { bubbles: true }));
   updateMath();
   hideSuggestions(vectorId);
 
