@@ -28,20 +28,108 @@ async function callAPI(messages, maxTokens, stream, signal) {
 
 // ─── VECTOR MICRO-NICHE SUGGESTIONS ─────────────────
 
-async function fetchVectorSuggestions(vectorId) {
-  if (!getApiKey() || S.suggestionLoading[vectorId]) return;
+const NICHE_SEEDS = {
+  adhd:         ['ADHD freelance coaches', 'ADHD productivity system sellers', 'ADHD remote workers', 'ADHD content creators', 'ADHD parent entrepreneurs', 'ADHD college students online', 'ADHD women solopreneurs'],
+  freelance:    ['Freelance designers on Fiverr', 'Freelance writers niche blogs', 'Freelance devs no-code pivot', 'Freelance burnt-out consultants', 'Freelance moms part-time', 'Freelance tax-confused creators', 'Freelance pricing struggle'],
+  fitness:      ['Home fitness over 40', 'Fitness creators on YouTube', 'Fitness for desk workers', 'Postpartum fitness coaching', 'Fitness meal-prep sellers', 'Fitness wearable data nerds', 'Fitness accountability groups'],
+  creator:      ['Creator economy burnout', 'Creators under 1K followers', 'Creators licensing digital art', 'Creators selling templates', 'Creators pivoting to courses', 'Creators monetizing newsletters', 'Creators with niche podcasts'],
+  ecommerce:    ['Etsy digital product sellers', 'Shopify one-product stores', 'Print-on-demand niche merch', 'Amazon KDP low-content books', 'Ecommerce micro-brand builders', 'Ecommerce subscription boxes', 'Ecommerce dropship alternatives'],
+  health:       ['Gut health meal planners', 'Mental health journaling tools', 'Health-anxious self-trackers', 'Chronic pain remote workers', 'Health coaches on Instagram', 'Sleep optimization seekers', 'Burnout recovery programs'],
+  education:    ['Online tutors niche subjects', 'Education course creators', 'Homeschool curriculum sellers', 'Education micro-credential builders', 'Language learning community', 'Education accessibility tools', 'STEM bootcamp alternatives'],
+  finance:      ['Finance for freelancers', 'Crypto-curious beginners', 'Budget-anxious millennials', 'Finance content creators', 'Debt-free journey community', 'Finance automation tools', 'Side-income passive seekers'],
+  parenting:    ['Parenting neurodivergent kids', 'Single parent side hustles', 'Parenting toddler sleep help', 'Parenting digital safety tools', 'Parenting homeschool community', 'Parenting meal planning', 'New parent overwhelm support'],
+  technology:   ['No-code app builders', 'AI prompt engineers', 'Tech-adjacent career switchers', 'Technology accessibility advocates', 'Tech-overwhelmed small biz', 'Low-code automation sellers', 'AI content tool reviewers'],
+  gaming:       ['Indie game devs marketing', 'Gaming content micro-niches', 'Retro gaming collectors', 'Gaming accessibility advocates', 'Mobile game monetization', 'Gaming community builders', 'Esports coaching services'],
+  pet:          ['Pet nutrition consultants', 'Dog training online courses', 'Pet anxiety product sellers', 'Exotic pet community builders', 'Pet content creators', 'Senior pet care guides', 'Pet subscription box curators'],
+  food:         ['Meal prep for busy parents', 'Food allergy recipe creators', 'Sourdough micro-bakers online', 'Food photography educators', 'Ethnic cuisine niche blogs', 'Food truck business guides', 'Plant-based meal planners'],
+  beauty:       ['Clean beauty micro-brands', 'Beauty over 50 creators', 'Skincare for sensitive skin', 'Beauty on a budget guides', 'DIY beauty recipe sellers', 'Beauty tech tool reviewers', 'Inclusive beauty educators'],
+  travel:       ['Budget solo travel guides', 'Van life content creators', 'Travel for remote workers', 'Accessible travel planners', 'Travel micro-niche bloggers', 'Weekend trip itinerary sellers', 'Travel reward point optimizers'],
+  productivity: ['Notion template creators', 'Productivity for ADHD brains', 'Digital minimalism coaches', 'Productivity journal sellers', 'Time-blocking system builders', 'Productivity podcast niche', 'Automation workflow sellers'],
+  community:    ['Paid community builders', 'Niche Discord moderators', 'Community-led growth coaches', 'Membership site creators', 'Community event organizers', 'Slack community monetizers', 'Local meetup platform builders'],
+  coaching:     ['Life coaching niche pivots', 'Career coaching for introverts', 'Coaching for new managers', 'Health coaching certification', 'Coaching package designers', 'Group coaching facilitators', 'Executive coaching solopreneurs'],
+  writing:      ['Newsletter monetization niche', 'Self-publishing low-content', 'Copywriting for SaaS landing', 'Ghostwriting for founders', 'Technical writing freelancers', 'Writing accountability groups', 'Journaling prompt sellers'],
+  design:       ['Canva template sellers', 'UX for no-code builders', 'Brand identity micro-agencies', 'Design system freelancers', 'Social media template shops', 'Presentation design niche', 'Icon and illustration licensing'],
+};
 
-  const currentVal = val(vectorId);
+function getLocalSuggestions(input, vectorId) {
+  var q = input.toLowerCase();
+  var matched = [];
+
+  var keys = Object.keys(NICHE_SEEDS);
+  for (var i = 0; i < keys.length; i++) {
+    if (q.indexOf(keys[i]) !== -1 || keys[i].indexOf(q) !== -1) {
+      matched = matched.concat(NICHE_SEEDS[keys[i]]);
+    }
+  }
+
+  if (matched.length === 0) {
+    var words = q.split(/\s+/);
+    for (var w = 0; w < words.length; w++) {
+      if (words[w].length < 3) continue; // skip short words (to, at, is) to avoid false matches
+      for (var k = 0; k < keys.length; k++) {
+        var seeds = NICHE_SEEDS[keys[k]];
+        for (var s = 0; s < seeds.length; s++) {
+          if (seeds[s].toLowerCase().indexOf(words[w]) !== -1) {
+            matched.push(seeds[s]);
+          }
+        }
+      }
+      if (matched.length >= 10) break;
+    }
+  }
+
+  if (matched.length === 0) {
+    matched = [
+      input + ' for beginners',
+      input + ' passive income',
+      input + ' micro-community',
+      input + ' digital products',
+      input + ' underserved pain'
+    ];
+  }
+
+  var unique = [];
+  var seen = {};
+  for (var u = 0; u < matched.length; u++) {
+    var lower = matched[u].toLowerCase();
+    if (!seen[lower] && lower !== q) {
+      seen[lower] = true;
+      unique.push(matched[u]);
+    }
+  }
+
+  // Shuffle for variety on refresh
+  for (var j = unique.length - 1; j > 0; j--) {
+    var r = Math.floor(Math.random() * (j + 1));
+    var tmp = unique[j];
+    unique[j] = unique[r];
+    unique[r] = tmp;
+  }
+
+  return unique.slice(0, 5);
+}
+
+async function fetchVectorSuggestions(vectorId) {
+  if (S.suggestionLoading[vectorId]) return;
+
+  var currentVal = val(vectorId);
   if (!currentVal || currentVal.length < 4) return;
+
+  if (!getApiKey()) {
+    var local = getLocalSuggestions(currentVal, vectorId);
+    S.microSuggestions[vectorId] = local;
+    renderSuggestionChips(vectorId, local);
+    return;
+  }
 
   S.suggestionLoading[vectorId] = true;
   showSuggestionLoading(vectorId);
 
-  const v1Val = val('v1');
-  const v2Val = val('v2');
-  const v3Val = val('v3');
+  var v1Val = val('v1');
+  var v2Val = val('v2');
+  var v3Val = val('v3');
 
-  let contextBlock = '';
+  var contextBlock = '';
   if (vectorId === 'v1') {
     contextBlock = 'You are helping define the BASE niche for a blue ocean opportunity system.\nCurrent V1 input: "' + currentVal + '"';
   } else if (vectorId === 'v2') {
@@ -50,20 +138,20 @@ async function fetchVectorSuggestions(vectorId) {
     contextBlock = 'V1 = "' + v1Val + '", V2 = "' + v2Val + '"\nYou are deepening with a sub-community (V3).\nCurrent V3 input: "' + currentVal + '"';
   }
 
-  const prompt = contextBlock + '\n\nGenerate exactly 5 micro/sub-niche refinements for this vector. Each must be:\n- More specific than the user\'s input (add a qualifier, platform, behavior, or pain context)\n- 3-6 words maximum\n- Commercially interesting — implies a real unserved pain\n- Distinct from each other (no near-duplicates)\n\nReturn ONLY a raw JSON array, no markdown, no preamble:\n["suggestion one","suggestion two","suggestion three","suggestion four","suggestion five"]';
+  var prompt = contextBlock + '\n\nGenerate exactly 5 micro/sub-niche refinements for this vector. Each must be:\n- More specific than the user\'s input (add a qualifier, platform, behavior, or pain context)\n- 3-6 words maximum\n- Commercially interesting — implies a real unserved pain\n- Distinct from each other (no near-duplicates)\n\nReturn ONLY a raw JSON array, no markdown, no preamble:\n["suggestion one","suggestion two","suggestion three","suggestion four","suggestion five"]';
 
   try {
-    const res = await callAPI(
+    var res = await callAPI(
       [{ role: 'user', content: prompt }],
       200,
       false,
       null
     );
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content || '';
-    const match = text.match(/\[[\s\S]*?\]/);
+    var data = await res.json();
+    var text = data.choices?.[0]?.message?.content || '';
+    var match = text.match(/\[[\s\S]*?\]/);
     if (match) {
-      const suggestions = JSON.parse(match[0]).slice(0, 5);
+      var suggestions = JSON.parse(match[0]).slice(0, 5);
       S.microSuggestions[vectorId] = suggestions;
       renderSuggestionChips(vectorId, suggestions);
 
@@ -71,10 +159,14 @@ async function fetchVectorSuggestions(vectorId) {
         softAlignLenses();
       }
     } else {
-      hideSuggestions(vectorId);
+      var fallback = getLocalSuggestions(currentVal, vectorId);
+      S.microSuggestions[vectorId] = fallback;
+      renderSuggestionChips(vectorId, fallback);
     }
   } catch (e) {
-    hideSuggestions(vectorId);
+    var fallback = getLocalSuggestions(currentVal, vectorId);
+    S.microSuggestions[vectorId] = fallback;
+    renderSuggestionChips(vectorId, fallback);
   } finally {
     S.suggestionLoading[vectorId] = false;
   }
